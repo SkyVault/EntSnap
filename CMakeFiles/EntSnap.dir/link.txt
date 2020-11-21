@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/EntSnap.dir/src/Project.cpp.o CMakeFiles/EntSnap.dir/src/main.cpp.o -o EntSnap  /usr/lib/libraylib.so -lraylib 

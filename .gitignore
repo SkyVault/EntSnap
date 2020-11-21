@@ -1,0 +1,6 @@
+.ccls-cache/
+cmake-build-debug/
+CMakeCache.txt
+*.cmake
+EntSnap
+.idea

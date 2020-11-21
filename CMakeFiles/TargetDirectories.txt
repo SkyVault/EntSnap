@@ -1,0 +1,3 @@
+/home/dustin/Repos/EntSnapRay/CMakeFiles/rebuild_cache.dir
+/home/dustin/Repos/EntSnapRay/CMakeFiles/edit_cache.dir
+/home/dustin/Repos/EntSnapRay/CMakeFiles/EntSnap.dir
