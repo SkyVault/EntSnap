@@ -8,6 +8,8 @@
 
 namespace EntSnap {
     class Ent {
+    public:
+        bool editingName{false};
         std::string name{""};
         std::map<std::string, Component> components;
     };
