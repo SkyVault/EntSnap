@@ -11,7 +11,9 @@ namespace EntSnap {
     public:
         bool editingName{false};
         std::string name{""};
-        std::map<std::string, Component> components;
+        std::vector<Component> components;
+
+        bool has(const std::string& name);
     };
 }
 

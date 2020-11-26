@@ -16,6 +16,7 @@ using namespace EntSnap;
 
 enum class ModalTypes {
     NEW_COMPONENT_MODAL,
+    EDIT_COMPONENT_MODAL,
     EXPORT_PROJECT_MODAL,
     IMPORT_PROJECT_MODAL,
 };
@@ -32,6 +33,10 @@ public:
 
     inline std::unique_ptr<Ent>& getCurrentEntity() {
         return editingEntities[editingEntityIndex];
+    }
+
+    inline bool isEditingEntity() {
+        return editingEntities.size() > 0;
     }
 
     void serializeProject(const std::filesystem::path& path);

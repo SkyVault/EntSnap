@@ -1,1 +1,77 @@
-{"components":[{"name":"Vec2","props":[{"name":"x","type":"FLOAT","value":0.0},{"name":"y","type":"FLOAT","value":0.0}]}],"project-name":""}
+{
+  "components": [
+    {
+      "name": "Test",
+      "props": [
+        {
+          "name": "Hello",
+          "type": "STRING",
+          "value": "World"
+        },
+        {
+          "name": "Test",
+          "type": "FLOAT",
+          "value": 123.0
+        }
+      ]
+    },
+    {
+      "name": "Body",
+      "props": [
+        {
+          "name": "x",
+          "type": "FLOAT",
+          "value": 0.0
+        },
+        {
+          "name": "y",
+          "type": "FLOAT",
+          "value": 0.0
+        },
+        {
+          "name": "width",
+          "type": "STRING",
+          "value": "24"
+        },
+        {
+          "name": "height",
+          "type": "STRING",
+          "value": "32"
+        }
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "components": [
+        {
+          "name": "Body",
+          "props": [
+            {
+              "name": "x",
+              "type": "FLOAT",
+              "value": 0.0
+            },
+            {
+              "name": "y",
+              "type": "FLOAT",
+              "value": 0.0
+            },
+            {
+              "name": "width",
+              "type": "STRING",
+              "value": "24"
+            },
+            {
+              "name": "height",
+              "type": "STRING",
+              "value": "32"
+            }
+          ]
+        }
+      ],
+      "name": "TestEntity"
+    }
+  ],
+  "project-name": ""
+}

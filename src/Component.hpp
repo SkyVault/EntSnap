@@ -6,6 +6,7 @@
 #define ENTSNAP_COMPONENT_HPP
 
 #include <variant>
+#include <type_traits>
 #include <string>
 #include <cstring>
 #include <tuple>
@@ -32,9 +33,11 @@ namespace EntSnap {
         GENERATE_TYPES(GENERATE_STRING)
     };
 
-    static const std::map<std::string, Types> TypesM = {
+    static std::map<std::string, Types> TypesM = {
         GENERATE_TYPES(GENERATE_PAIR)
     };
+
+    #define BUFF_SIZE (512)
 
     using Value = std::variant<std::string, double, long>;
 
@@ -51,10 +54,12 @@ namespace EntSnap {
         bool guiTypeDropdown{false};
 
         bool guiNameEdit{false};
-        char guiName[512] = {'\0'};
+        char guiName[BUFF_SIZE] = {'\0'};
 
         bool guiValueEdit{false};
-        char guiValue[512] = {'\0'};
+        char guiValue[BUFF_SIZE] = {'\0'};
+
+        bool shouldRemove{false};
     };
 
     class Component {
@@ -68,41 +73,16 @@ namespace EntSnap {
 
     class GuiComponent {
     public:
-        char name[512] = {'\0'};
+        char name[BUFF_SIZE] = {'\0'};
         std::vector<GuiObject> props{};
 
         inline void reset() {
-            std::memset(name, 0, sizeof(char)*512);
+            std::memset(name, 0, sizeof(char)*BUFF_SIZE);
             props.clear();
         }
-
-        inline Component toComponent() {
-            std::vector<Object> props{};
-
-            for (const auto& guiObj : this->props) {
-                Value value;
-
-                switch (static_cast<Types>(guiObj.type)) {
-                    case Types::STRING: value = std::string{guiObj.guiValue}; break;
-                    case Types::FLOAT: value = (double)std::stof(guiObj.guiValue); break;
-                    case Types::INTEGER: value = (long)std::stod(guiObj.guiValue); break;
-                    default:
-                        std::cout << "Unhandled object type: " << guiObj.type << std::endl;
-                }
-
-
-                props.emplace_back(Object{
-                    .type = guiObj.type,
-                    .name = std::string{guiObj.guiName},
-                    .value = std::move(value),
-                });
-            }
-
-            return Component {
-                .name = std::string{this->name},
-                .props = std::move(props),
-            };
-        }
     };
+
+    Component ToComponent(const GuiComponent& in);
+    GuiComponent ToGuiComponent(const Component& in);
 }
 #endif //ENTSNAP_COMPONENT_HPP
