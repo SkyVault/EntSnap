@@ -6,15 +6,21 @@
 
 #include <memory>
 #include <optional>
-#include <filesystem>
+#include <filesystem> 
 
 #include "Project.hpp"
 #include "Entity.hpp"
 #include "Component.hpp"
+#include "GuiFileDialog.hpp"
 
 using namespace EntSnap;
 
+namespace fs = std::filesystem;
+
 enum class ModalTypes {
+    NEW_PROJECT_MODAL,
+    OPEN_PROJECT_MODAL,
+    SAVE_AS_PROJECT_MODAL,
     NEW_COMPONENT_MODAL,
     EDIT_COMPONENT_MODAL,
     EXPORT_PROJECT_MODAL,
@@ -23,21 +29,31 @@ enum class ModalTypes {
 
 class App {
 public:
+    App();
+
     Proj currentProj;
     GuiComponent guiComponent;
 
-    std::vector<std::unique_ptr<Ent>> editingEntities{};
+    FileDialogState fileDialogState;
+
     int editingEntityIndex{0};
 
     std::optional<ModalTypes> currentModal{std::nullopt};
 
-    inline std::unique_ptr<Ent>& getCurrentEntity() {
-        return editingEntities[editingEntityIndex];
+    inline Ent& getCurrentEntity() {
+        return currentProj.entities[editingEntityIndex];
     }
 
     inline bool isEditingEntity() {
-        return editingEntities.size() > 0;
+        return currentProj.entities.size() > 0;
     }
+
+    inline std::vector<Ent>& getEntities() {
+        return currentProj.entities; 
+    }
+
+    void nextEntity();
+    void prevEntity();
 
     void serializeProject(const std::filesystem::path& path);
     void loadProject(const std::filesystem::path& path);

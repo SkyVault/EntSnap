@@ -10,6 +10,8 @@ namespace EntSnap {
     class Ent {
     public:
         bool editingName{false};
+        InputState nameInputState{};
+
         std::string name{""};
         std::vector<Component> components;
 

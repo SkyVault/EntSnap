@@ -5,8 +5,6 @@
 #ifndef ENTSNAP_COMPONENT_HPP
 #define ENTSNAP_COMPONENT_HPP
 
-#include <variant>
-#include <type_traits>
 #include <string>
 #include <cstring>
 #include <tuple>
@@ -14,6 +12,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+
+#include "CustomGuis.hpp"
 
 namespace EntSnap {
     #define GENERATE_ENUM(ENUM) ENUM,
@@ -23,13 +23,21 @@ namespace EntSnap {
     #define GENERATE_TYPES(X)\
         X(STRING) \
         X(FLOAT) \
-        X(INTEGER)
+        X(INTEGER) \
+        X(VECTOR_2) \
+        X(VECTOR_3) \
+        X(VECTOR_4) \
+        X(COLOR) \
+        X(TEXTURE) \
+        X(REGION) \
+        X(SIMPLE_ANIMATION) \
+        X(ADVANCED_ANIMATION)
 
     enum class Types : int {
         GENERATE_TYPES(GENERATE_ENUM)
     };
 
-    static const std::string TypesS[] = {
+    static const std::vector<std::string> TypesS = {
         GENERATE_TYPES(GENERATE_STRING)
     };
 
@@ -39,12 +47,11 @@ namespace EntSnap {
 
     #define BUFF_SIZE (512)
 
-    using Value = std::variant<std::string, double, long>;
-
     struct Object {
         int type;
         std::string name{""};
-        Value value;
+        std::string value; 
+        InputState inputState;
     };
 
     class GuiObject {

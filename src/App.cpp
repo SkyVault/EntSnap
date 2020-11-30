@@ -5,6 +5,11 @@ using json = nlohmann::json;
 
 constexpr int INDENT {2};
 
+App::App() {
+    const fs::path path = fs::current_path();
+    fileDialogState = GuiInitFileDialog(path.root_path().string(), false);
+}
+
 void App::serializeProject(const std::filesystem::path& path) {
     json out;
 
@@ -16,22 +21,11 @@ void App::serializeProject(const std::filesystem::path& path) {
         obj["name"] = c.name;
 
         json props;
-        for (auto& [type, name, value] : c.props) {
+        for (auto& [type, name, value, _] : c.props) {
             json prop = json::object();
             prop["type"] = TypesS[type];
             prop["name"] = name;
-
-            switch(static_cast<Types>(type)) {
-                case Types::STRING: prop["value"] = std::get<std::string>(value); break;
-                case Types::FLOAT: prop["value"] = std::get<double>(value); break;
-                case Types::INTEGER: prop["value"] = std::get<long>(value); break;
-                default:
-                    std::cout
-                        << "Serializer does not support property type: "
-                        << TypesS[type]
-                        << std::endl;
-            }
-
+            prop["value"] = value; 
             props.push_back(prop);
         }
 
@@ -92,19 +86,7 @@ void App::loadProject(const std::filesystem::path& path) {
             const std::string t = prop["type"].get<std::string>();
             presult.type = static_cast<int>(TypesM[t]);
             presult.name = prop["name"];
-
-            switch (static_cast<Types>(presult.type)) {
-                case Types::INTEGER:
-                    presult.value = prop["value"].get<long>();
-                    break;
-                case Types::FLOAT:
-                    presult.value = prop["value"].get<double>();
-                    break;
-                case Types::STRING:
-                    presult.value = prop["value"].get<std::string>();
-                    break;
-            }
-
+            presult.value = prop["value"]; 
             result.props.emplace_back(std::move(presult));
         }
         return result;
@@ -122,7 +104,16 @@ void App::loadProject(const std::filesystem::path& path) {
             resultEnt.components.emplace_back(readComp(comp));
         }
 
-        currentProj.entities.emplace_back(resultEnt);
-        editingEntities.emplace_back(std::make_unique<Ent>(resultEnt));
+        getEntities().emplace_back(resultEnt);
     }
+}
+
+void App::nextEntity(){
+    editingEntityIndex += 1;
+    editingEntityIndex %= getEntities().size();
+}
+
+void App::prevEntity(){
+    editingEntityIndex -= 1;
+    editingEntityIndex %= getEntities().size(); 
 }

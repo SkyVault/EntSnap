@@ -422,6 +422,7 @@ RAYGUIDEF void GuiUnlock(void);                                         // Unloc
 RAYGUIDEF void GuiFade(float alpha);                                    // Set gui controls alpha (global state), alpha goes from 0.0f to 1.0f
 RAYGUIDEF void GuiSetState(int state);                                  // Set gui state (global state)
 RAYGUIDEF int GuiGetState(void);                                        // Get gui state (global state)
+RAYGUIDEF int GuiGetLocked(void);                                        // Get gui state (global state)
 
 // Font set/get functions
 RAYGUIDEF void GuiSetFont(Font font);                                   // Set gui custom font (global state)
@@ -674,6 +675,8 @@ void GuiSetState(int state) { guiState = (GuiControlState)state; }
 
 // Get gui state (global state)
 int GuiGetState(void) { return guiState; }
+
+int GuiGetLocked(void) { return guiLocked; }
 
 // Set custom gui font
 // NOTE: Font loading/unloading is external to raygui

@@ -2,6 +2,7 @@
 #include <tuple>
 #include <raylib.h>
 #include <algorithm>
+#include <sstream>
 
 #include <memory>
 #include <optional>
@@ -9,6 +10,8 @@
 #include "Project.hpp"
 #include "CustomGuis.hpp"
 #include "Component.hpp"
+#include "SidePanel.hpp"
+#include "Consts.hpp"
 #include "App.hpp"
 
 #define RAYGUI_IMPLEMENTATION
@@ -16,13 +19,6 @@
 #include <raygui.h>
 
 using namespace EntSnap;
-
-constexpr std::tuple<int, int> WIN_SIZE {1280, 720};
-constexpr float MARGIN {4.0};
-constexpr float DMARGIN {MARGIN * 2};
-constexpr float TOOL_BAR_H = 24 + DMARGIN;
-constexpr float COMP_LIST_W = 300.0;
-constexpr float COMP_CARD_H = 64.0;
 
 void DoToolbar(std::unique_ptr<App>& app, const float xoff, const float yoff) {
     const float w = GetScreenWidth();
@@ -35,116 +31,32 @@ void DoToolbar(std::unique_ptr<App>& app, const float xoff, const float yoff) {
     DrawRectangleRec(region, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
     // GuiGroupBox(region, "Tools");
 
-    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "+ New")) {
-        app->editingEntityIndex = app->editingEntities.size();
-        app->editingEntities.emplace_back(std::make_unique<Ent>());
-    }
-
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "+ New Project")) {
+    } 
     xcr += btnw + MARGIN;
-    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "Export")) {
+
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "Open Project")) {
+    } 
+    xcr += btnw + MARGIN;
+
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "Save Project")) {
+    } 
+    xcr += btnw + MARGIN; 
+
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "Save As Project")) {
+        app->fileDialogState.active = true;
+        app->currentModal = ModalTypes::SAVE_AS_PROJECT_MODAL;
+    } 
+    xcr += btnw + MARGIN; 
+
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "+ New Entity")) {
+        app->editingEntityIndex = app->getEntities().size();
+        app->getEntities().emplace_back(Ent{});
+    } 
+    xcr += btnw + MARGIN;
+
+    if (GuiButton({xcr + DMARGIN, ycr + MARGIN, btnw, 24}, "Export Entities")) {
         app->serializeProject("testout");
-    }
-}
-
-enum class CmdState {
-    UNATTACHED,
-    ATTACHED,
-};
-
-bool DoComponentCard(
-    std::unique_ptr<App>& app,
-    const Component& comp,
-    float xcr,
-    float ycr,
-    CmdState state=CmdState::UNATTACHED,
-    bool canEdit=false,
-    bool canAttach=true) {
-    const auto w = COMP_LIST_W - MARGIN;
-    const Rectangle region = {xcr, ycr, w - DMARGIN, COMP_CARD_H};
-
-    bool hot = !CheckCollisionPointRec(GetMousePosition(), region);
-
-    DrawRectangleRec(region, canAttach
-                         ? GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR))
-                         : (Color){200, 200, 200, 255});
-    DrawRectangleLinesEx(region,
-                         1.0f,
-                         GetColor(GuiGetStyle(DEFAULT, hot
-                                              ? BORDER_COLOR_NORMAL
-                                              : BORDER_COLOR_FOCUSED)));
-
-    // Move triangle
-    if (canAttach && state == CmdState::UNATTACHED)
-        DrawLeftArrow({
-            xcr + MARGIN, ycr + MARGIN, 24, COMP_CARD_H - DMARGIN},
-            (Color){200, 200, 200, 255});
-
-    if (state == CmdState::ATTACHED) {
-        DrawRightArrow({
-            xcr + w - (DMARGIN + 24 + MARGIN),
-            ycr + MARGIN, 24, COMP_CARD_H - DMARGIN},
-            (Color){200, 200, 200, 255});
-    }
-
-    GuiLabel({xcr + MARGIN, ycr, w - DMARGIN - MARGIN, 32}, comp.name.c_str());
-
-    // Edit button
-    if (canEdit && GuiButton({xcr + w - (96 + MARGIN*2), ycr + MARGIN, 94, 24}, "Edit")) {
-        app->guiComponent = ToGuiComponent(comp);
-        app->currentModal = ModalTypes::EDIT_COMPONENT_MODAL;
-    }
-
-    return
-        canAttach &&
-        IsMouseButtonPressed(MOUSE_LEFT_BUTTON) &&
-        app->currentModal == std::nullopt &&
-        CheckCollisionPointRec(GetMousePosition(), region);
-}
-
-void DoComponentList(std::unique_ptr<App>& app, const float xoff, const float yoff) {
-    const auto w = COMP_LIST_W - MARGIN;
-
-    static int tab = 0;
-    GuiTabPanels(
-        {xoff, yoff, w, (GetScreenHeight() - yoff) - MARGIN + 2},
-        {96.0f, 24.0f}, "Components;Entities;", &tab);
-
-    auto xcr = xoff + MARGIN;
-    auto ycr = yoff + MARGIN + 24.0 + MARGIN;
-
-    if (GuiButton({xcr, ycr, 100, 24}, "+ New Component")) {
-        app->currentModal = ModalTypes::NEW_COMPONENT_MODAL;
-    }
-
-    ycr += 24;
-
-    static char search[512] = {'\0'};
-    static int editing = false;
-    GuiLabel({xcr, ycr, w - DMARGIN, 24}, "Search");
-    ycr += 14 + MARGIN;
-    auto inputBounds = Rectangle{xcr, ycr, w - DMARGIN, 24};
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        editing = (CheckCollisionPointRec(GetMousePosition(), inputBounds));
-    GuiTextBox(inputBounds, search, 32, editing);
-    ycr += 24 + MARGIN;
-
-    for (const auto& comp : app->currentProj.components) {
-        bool attached = false;
-        if (app->isEditingEntity()) {
-            attached = app->getCurrentEntity()->has(comp.name);
-        }
-        if (DoComponentCard(app,
-                            comp,
-                            xcr,
-                            ycr,
-                            attached ? CmdState::ATTACHED : CmdState::UNATTACHED,
-                            true,
-                            !attached)) {
-            if (app->isEditingEntity()) {
-                app->getCurrentEntity()->components.emplace_back(comp);
-            }
-        }
-        ycr += 64 + MARGIN;
     }
 }
 
@@ -176,11 +88,11 @@ void DoEntityView(std::unique_ptr<App>& app, const int xoff, const int yoff) {
     const auto innerHeight = (GetScreenHeight() - yoff) - (DMARGIN * 2 + MARGIN) - (24 + MARGIN);
 
     std::string tabs{""};
-    for (const auto& e : app->editingEntities) {
-        if (e->name == "") {
+    for (const auto& e : app->getEntities()) {
+        if (e.name == "") {
            tabs  += "[ unnamed ];";
         } else {
-            tabs += e->name + ";";
+            tabs += e.name + ";";
         }
     }
 
@@ -192,10 +104,14 @@ void DoEntityView(std::unique_ptr<App>& app, const int xoff, const int yoff) {
             tabs.c_str(),
             &app->editingEntityIndex);
 
+    if (IsKeyDown(KEY_LEFT_SHIFT) && IsKeyPressed(KEY_TAB)) {
+        app->nextEntity();
+    }
+
     if (closeIndex >= 0) {
-        app->editingEntities.erase(app->editingEntities.begin() + closeIndex);
-        if (app->editingEntityIndex >= app->editingEntities.size())
-            app->editingEntityIndex = app->editingEntities.size() - 1;
+        app->getEntities().erase(app->getEntities().begin() + closeIndex);
+        if (app->editingEntityIndex >= app->getEntities().size())
+            app->editingEntityIndex = app->getEntities().size() - 1;
         return;
     }
 
@@ -208,37 +124,71 @@ void DoEntityView(std::unique_ptr<App>& app, const int xoff, const int yoff) {
                 "Attached Components");
     // Draw attached components in a list
     int index = 0;
-    for (const auto& comp : ent->components) {
-        DoComponentCard(app,
-                        comp,
-                        xx + MARGIN + MARGIN/2,
-                        yy + MARGIN + index * (MARGIN + COMP_CARD_H),
-                        CmdState::ATTACHED);
-        index++;
-    }
+    {
+        auto xcr = xx + MARGIN + MARGIN/2;
+        auto ycr = yy + MARGIN + index * (MARGIN + COMP_CARD_H) + MARGIN/2;
+        for (auto& comp : ent.components) { 
+            const auto w = COMP_LIST_W - MARGIN;
 
+            auto calcHeight = comp.props.size() * (24 + MARGIN); 
+
+            const Rectangle region = {xcr, ycr, w - DMARGIN, COMP_CARD_H + calcHeight};
+
+            bool hot = !CheckCollisionPointRec(GetMousePosition(), region);
+            DrawRectangleRec(region, GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+            DrawRectangleLinesEx(
+                region, 1.0f, GetColor(GuiGetStyle(DEFAULT, hot
+                                              ? BORDER_COLOR_NORMAL
+                                              : BORDER_COLOR_FOCUSED)));
+
+            const auto arrowRegion = Rectangle{
+                xcr + w - (DMARGIN + 24 + MARGIN),
+                ycr + MARGIN, 24, 24};
+            DrawRightArrow(arrowRegion, Color{200, 200, 200, 255});
+
+            xcr += MARGIN;
+
+            GuiLabel({xcr, ycr, w - DMARGIN - MARGIN, 32}, comp.name.c_str());
+
+            ycr += 24 + DMARGIN;
+
+            const auto nameW = (w - DMARGIN - MARGIN/2 - DMARGIN) * (1.0f/4.0f);
+            const auto valueW = (w - DMARGIN - MARGIN/2 - DMARGIN) - nameW;
+
+            auto xcrStart = xcr;
+            for (auto& prop : comp.props) {
+                switch(static_cast<Types>(prop.type)) { 
+                    case Types::FLOAT: { 
+                        GuiLabel({xcr, ycr, nameW, 24}, prop.name.c_str());
+                        xcr += nameW + MARGIN; 
+                        GuiInputBase(prop.inputState, {xcr, ycr, valueW, 24}, prop.value, 24); 
+                        break;
+                    }
+                    case Types::STRING: {
+                        break;
+                    }
+                    case Types::INTEGER: {
+                        break;
+                    }
+                }
+                xcr = xcrStart;
+                ycr += 24 + MARGIN;
+            }
+
+            ycr += COMP_CARD_H - 24 - MARGIN;
+            xcr = xcrStart - MARGIN;
+
+            index++;
+        } 
+    }
 
     ycr += DMARGIN;
     xcr += DMARGIN;
 
-    const auto ystart = ycr;
-    char nameBuf[512];
-    { int i = 0; for (auto c : ent->name) nameBuf[i++] = c; }
-    nameBuf[ent->name.size()] = '\0';
-
-    GuiLabel({xcr, ycr, 100, 24}, "Name");
-
-    ycr += 24;
-    auto inputBounds = Rectangle{xcr, ycr, 200, 24};
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-        ent->editingName = (CheckCollisionPointRec(GetMousePosition(), inputBounds));
-    GuiTextBox(inputBounds, nameBuf, 32, ent->editingName);
-
-    if (GuiButton({xx - (96 + DMARGIN), ycr, 96, 24}, "Save")) {
-        app->currentProj.entities.push_back(*ent.get());
-    }
-
-    ent->name = std::string{nameBuf};
+    const auto ystart = ycr; 
+    GuiLabel({xcr, ycr, 100, 24}, "Name"); 
+    ycr += 24; 
+    GuiStringInput(ent.nameInputState, {xcr, ycr, 200, 24}, ent.name, 32);
 
     ycr += 24 + DMARGIN;
     GuiPanel({xcr, ycr, width - (COMP_LIST_W + DMARGIN * 3 + MARGIN), innerHeight - (ycr - ystart + MARGIN)});
@@ -262,12 +212,8 @@ void DoNoEntityView(std::unique_ptr<App>& app, const int xoff, const int yoff) {
     DrawText(text2, xcr + width / 2 - twidth2 / 2, y + height + 4, height2, LIGHTGRAY);
 }
 
-void DoComponentCreator(std::unique_ptr<App>& app, const int xoff, const int yoff) {
-    DoComponentList(app, xoff + GetScreenWidth() - COMP_LIST_W, TOOL_BAR_H);
-}
-
 void DoNewComponentModal(std::unique_ptr<App>& app, bool edit=false) {
-    const float w = 480;
+    const float w = 640;
     const float h = GetScreenHeight() - 100;
     const float x = GetScreenWidth() / 2 - w / 2;
     const float y = GetScreenHeight() / 2 - h / 2;
@@ -297,11 +243,13 @@ void DoNewComponentModal(std::unique_ptr<App>& app, bool edit=false) {
     const float ww = ((w - (DMARGIN + MARGIN * 3)) / 3.0f) - (24 - (MARGIN * 3 + MARGIN));
     const float preXcr = xcr;
 
+    const float factor = (1.0f / 1.5f);
+
     if (app->guiComponent.props.size() > 0) {
-        GuiLabel({xcr, ycr, ww, 24}, "Name");
-        xcr += ww + MARGIN;
-        GuiLabel({xcr, ycr, ww, 24}, "Type");
-        xcr += ww + MARGIN;
+        GuiLabel({xcr, ycr, ww * factor, 24}, "Name");
+        xcr += ww * factor + MARGIN;
+        GuiLabel({xcr, ycr, ww * factor, 24}, "Type");
+        xcr += ww * factor + MARGIN;
         GuiLabel({xcr, ycr, ww, 24}, "Value");
         xcr = preXcr;
 
@@ -314,28 +262,46 @@ void DoNewComponentModal(std::unique_ptr<App>& app, bool edit=false) {
 
     int index = 0;
     for (auto& obj: app->guiComponent.props) {
-        const auto nameRegion = Rectangle{xcr, ycr, ww, 24};
+        const auto nameRegion = Rectangle{xcr, ycr, ww * factor, 24};
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
             obj.guiNameEdit = CheckCollisionPointRec(GetMousePosition(), nameRegion);
-        GuiTextBox({xcr, ycr, ww, 24}, obj.guiName, 32, obj.guiNameEdit);
+        GuiTextBox(nameRegion, obj.guiName, 32, obj.guiNameEdit);
 
-        xcr += ww + MARGIN;
-        const auto dropDownRegion = Rectangle{xcr, ycr, ww, 24};
+        xcr += ww * factor + MARGIN;
+        const auto dropDownRegion = Rectangle{xcr, ycr, ww * factor, 24};
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
             if (CheckCollisionPointRec(GetMousePosition(), dropDownRegion))
                 obj.guiTypeDropdown = true;
 
+        std::stringstream ss("");
+        int i = 0;
+        for (const auto& t : TypesS) {
+            ss << t;
+            if (i < TypesS.size() - 1) ss << ";";
+            i++;
+        }
+
         if (GuiDropdownBox(dropDownRegion,
-                           "STRING;FLOAT;INTEGER", &obj.type, obj.guiTypeDropdown))
+                           ss.str().c_str(), &obj.type, obj.guiTypeDropdown))
             obj.guiTypeDropdown = false;
-        xcr += ww + MARGIN;
+        xcr += ww * factor + MARGIN;
 
-        const auto valueRegion = Rectangle{xcr, ycr, ww, 24};
-        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
-            obj.guiValueEdit = CheckCollisionPointRec(GetMousePosition(), valueRegion);
-        GuiTextBox(valueRegion, obj.guiValue, 32, obj.guiValueEdit);
-        xcr += ww + MARGIN;
+        switch (static_cast<Types>(obj.type)) {
+            case Types::STRING:
+            case Types::FLOAT:
+            case Types::INTEGER: {
+                const auto valueRegion = Rectangle{xcr, ycr, ww * (1.0f / factor), 24}; 
+                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+                    obj.guiValueEdit = CheckCollisionPointRec(GetMousePosition(), valueRegion);
+                GuiTextBox(valueRegion, obj.guiValue, 32, obj.guiValueEdit);
+                break;
+            }
+            case Types::VECTOR_2: {
 
+            }
+        }
+
+        xcr += ww * (1.0f / factor) + MARGIN;
         if (GuiButton({xcr, ycr, 24, 24}, "X")) {
             remove = index;
         }
@@ -395,6 +361,14 @@ void DoNewComponentModal(std::unique_ptr<App>& app, bool edit=false) {
     }
 }
 
+void DoSaveAsProjectModal(std::unique_ptr<App>& app) {
+    GuiFileDialog(app->fileDialogState);
+
+    if (!app->fileDialogState.active) {
+        app->currentModal = std::nullopt;
+    }
+}
+
 int main() {
     SetTargetFPS(60);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -420,11 +394,11 @@ int main() {
 
         const auto yframe = DMARGIN + MARGIN + TOOL_BAR_H;
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(),
-                      (Color){200, 200, 200, 255});
+                      Color{200, 200, 200, 255});
         DoToolbar(app, 0, MARGIN);
-        DoComponentList(app, GetScreenWidth() - COMP_LIST_W, yframe);
+        DoSidePanel(app, GetScreenWidth() - COMP_LIST_W, yframe);
 
-        if (app->editingEntities.size() > 0) {
+        if (app->getEntities().size() > 0) {
             DoEntityView(app, MARGIN, yframe - MARGIN);
         } else {
             DoNoEntityView(app, MARGIN, yframe);
@@ -443,6 +417,7 @@ int main() {
             switch (app->currentModal.value()) {
                 case ModalTypes::NEW_COMPONENT_MODAL: DoNewComponentModal(app); break;
                 case ModalTypes::EDIT_COMPONENT_MODAL: DoNewComponentModal(app, true); break;
+                case ModalTypes::SAVE_AS_PROJECT_MODAL: DoSaveAsProjectModal(app); break;
                 default: break;
             }
         }
