@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <tuple>
 #include <raylib.h>
 #include <algorithm>
@@ -382,7 +383,8 @@ int main() {
     GuiSetFont(GetFontDefault());
 
     auto app = std::make_unique<App>();
-    app->loadProject("testout");
+
+    // app->loadProject("testout");
 
     while (WindowShouldClose() == false) {
         BeginDrawing();
